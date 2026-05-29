@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScoreCraft — Music Notation Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-base:#faf9f6;
+  --bg-surface:#ffffff;
+  --bg-raised:#f4f2ec;
+  --bg-hover:#eeecE5;
+  --text-primary:#1c1a15;
+  --text-secondary:#6b6455;
+  --text-muted:#a39c8f;
+  --border-subtle:rgba(0,0,0,0.07);
+  --border-mid:rgba(0,0,0,0.14);
+  --border-strong:rgba(0,0,0,0.22);
+  --accent:#2C5F8A;
+  --accent-hover:#1e4568;
+  --accent-light:#ddeaf5;
+  --accent-mid:rgba(44,95,138,0.15);
+  --green:#2d7a4a;
+  --red:#b5341f;
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.08),0 1px 4px rgba(0,0,0,0.04);
+  --radius-sm:5px;
+  --radius-md:8px;
+  --radius-lg:12px;
+  --font-serif:'EB Garamond',Georgia,serif;
+  --font-sans:'Instrument Sans',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg-base:#18170f;
+    --bg-surface:#201f17;
+    --bg-raised:#28271e;
+    --bg-hover:#302f25;
+    --text-primary:#f0ede2;
+    --text-secondary:#a09680;
+    --text-muted:#5a5445;
+    --border-subtle:rgba(255,255,255,0.06);
+    --border-mid:rgba(255,255,255,0.12);
+    --border-strong:rgba(255,255,255,0.20);
+    --accent:#5b9fd4;
+    --accent-hover:#87bce6;
+    --accent-light:#0d2a42;
+    --accent-mid:rgba(91,159,212,0.15);
+    --green:#4aad72;
+    --red:#e06050;
+    --shadow-sm:0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md:0 4px 16px rgba(0,0,0,0.4);
+  }
+}
+
+html,body{height:100%;overflow:hidden;font-family:var(--font-sans);background:var(--bg-base);color:var(--text-primary);font-size:13px}
+
+/* ── Topbar ─────────────────────────────────────────────────────────── */
+.topbar{display:flex;align-items:center;height:46px;padding:0 14px;gap:0;background:var(--bg-surface);border-bottom:1px solid var(--border-subtle);box-shadow:var(--shadow-sm);flex-shrink:0;position:relative;z-index:20;}
+.logo{font-family:var(--font-serif);font-size:18px;font-weight:500;letter-spacing:.3px;color:var(--text-primary);margin-right:18px;user-select:none;display:flex;align-items:center;gap:7px;}
+.logo-icon{width:26px;height:26px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;flex-shrink:0;}
+.logo em{color:var(--accent);font-style:normal}
+.tb-sep{width:1px;background:var(--border-subtle);height:22px;margin:0 6px;flex-shrink:0}
+.tb-btn{display:flex;align-items:center;gap:5px;font-size:12px;font-family:var(--font-sans);font-weight:500;color:var(--text-secondary);padding:5px 10px;border-radius:var(--radius-sm);cursor:pointer;border:none;background:none;white-space:nowrap;transition:all 0.12s;}
+.tb-btn:hover{background:var(--bg-raised);color:var(--text-primary)}
+.tb-btn:active{transform:scale(0.97)}
+.tb-btn i{font-size:15px}
+.tb-btn.danger:hover{background:rgba(181,52,31,0.1);color:var(--red)}
+.tb-title{flex:1;text-align:center;font-size:13px;color:var(--text-secondary);font-family:var(--font-serif);font-style:italic;user-select:none;}
+.tb-right{display:flex;align-items:center;gap:6px}
+.zoom-wrap{display:flex;align-items:center;gap:0;background:var(--bg-raised);border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border-subtle)}
+.zoom-wrap .tb-btn{border-radius:0;padding:4px 8px;border:none;background:transparent}
+.zoom-disp{font-size:11px;color:var(--text-secondary);min-width:38px;text-align:center;font-family:var(--font-mono);border-left:1px solid var(--border-subtle);border-right:1px solid var(--border-subtle)}
+
+/* ── Layout ──────────────────────────────────────────────────────────── */
+.workspace{display:flex;height:calc(100vh - 46px - 46px - 22px)}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────── */
+.sidebar{width:52px;background:var(--bg-surface);border-right:1px solid var(--border-subtle);display:flex;flex-direction:column;align-items:center;padding:10px 0 10px;gap:3px;flex-shrink:0;}
+.sb-btn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-md);cursor:pointer;border:none;background:none;color:var(--text-muted);transition:all 0.12s;position:relative;}
+.sb-btn:hover{background:var(--bg-raised);color:var(--text-primary)}
+.sb-btn.active{background:var(--accent-light);color:var(--accent)}
+.sb-btn i{font-size:17px}
+.sb-sep{width:28px;height:1px;background:var(--border-subtle);margin:5px 0}
+.sb-tooltip{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--text-primary);color:var(--bg-surface);font-size:10px;padding:3px 8px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.12s;z-index:200;font-family:var(--font-sans);box-shadow:var(--shadow-md);}
+.sb-tooltip::before{content:'';position:absolute;right:100%;top:50%;transform:translateY(-50%);border:4px solid transparent;border-right-color:var(--text-primary);}
+.sb-btn:hover .sb-tooltip{opacity:1}
+
+/* ── Main ────────────────────────────────────────────────────────────── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────── */
+.toolbar{background:var(--bg-surface);border-bottom:1px solid var(--border-subtle);padding:6px 14px;display:flex;align-items:center;gap:5px;flex-shrink:0;overflow-x:auto;scrollbar-width:none;}
+.toolbar::-webkit-scrollbar{display:none}
+.tool-group{display:flex;align-items:center;gap:1px;background:var(--bg-raised);border-radius:var(--radius-md);padding:2px;border:1px solid var(--border-subtle);flex-shrink:0;}
+.tool-btn{display:flex;align-items:center;justify-content:center;min-width:28px;height:26px;padding:0 5px;border-radius:6px;cursor:pointer;border:none;background:none;color:var(--text-secondary);font-size:12px;font-weight:500;transition:all 0.1s;font-family:var(--font-sans);position:relative;}
+.tool-btn:hover{background:var(--bg-surface);color:var(--text-primary)}
+.tool-btn.active{background:var(--bg-surface);color:var(--accent);box-shadow:var(--shadow-sm)}
+.tool-btn i{font-size:14px}
+.note-sym{font-size:14px;font-family:var(--font-serif);line-height:1}
+.tool-sep{width:1px;height:22px;background:var(--border-subtle);margin:0 3px;flex-shrink:0}
+.tool-label{font-size:10px;color:var(--text-muted);letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;font-weight:600;margin-right:1px;flex-shrink:0}
+.tool-tt{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--text-primary);color:var(--bg-surface);font-size:10px;padding:2px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.12s;z-index:100;font-family:var(--font-sans);box-shadow:var(--shadow-sm);}
+.tool-btn:hover .tool-tt{opacity:1}
+.tool-tt kbd{background:rgba(255,255,255,0.18);border-radius:3px;padding:0 3px;font-size:9px;font-family:var(--font-mono);margin-left:3px;}
+
+/* ── Score Area ──────────────────────────────────────────────────────── */
+.score-area{flex:1;overflow-y:auto;overflow-x:hidden;padding:32px 24px;background:var(--bg-base);scroll-behavior:smooth;}
+.score-area::-webkit-scrollbar{width:6px}
+.score-area::-webkit-scrollbar-thumb{background:var(--border-mid);border-radius:3px}
+.score-page{background:var(--bg-surface);border-radius:6px;box-shadow:var(--shadow-md),0 0 0 1px rgba(0,0,0,0.06);width:100%;max-width:820px;margin:0 auto;padding:48px 56px 72px;min-height:520px;color:var(--text-primary);transition:transform 0.2s ease;}
+.score-header{text-align:center;margin-bottom:28px}
+.score-title{font-family:var(--font-serif);font-size:26px;font-weight:500;color:var(--text-primary);margin-bottom:5px;cursor:pointer;display:inline-block;border-bottom:1.5px dashed var(--border-mid);padding-bottom:1px;transition:opacity 0.12s;letter-spacing:0.3px;}
+.score-title:hover{opacity:0.6}
+.score-subtitle{font-family:var(--font-sans);font-size:12px;color:var(--text-secondary);cursor:pointer;transition:opacity 0.12s}
+.score-subtitle:hover{opacity:0.6}
+.score-meta{display:flex;justify-content:space-between;font-family:var(--font-sans);font-size:11px;color:var(--text-muted);margin-bottom:18px;margin-top:-4px}
+
+/* ── Playbar ─────────────────────────────────────────────────────────── */
+.playbar{background:var(--bg-surface);border-top:1px solid var(--border-subtle);padding:0 16px;display:flex;align-items:center;gap:8px;height:46px;flex-shrink:0;}
+.play-btn{width:32px;height:32px;border-radius:50%;background:var(--accent);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.12s;color:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(44,95,138,0.3);}
+.play-btn:hover{background:var(--accent-hover);transform:scale(1.06)}
+.play-btn:active{transform:scale(0.96)}
+.play-btn i{font-size:13px}
+.transport-btn{width:26px;height:26px;border-radius:var(--radius-sm);background:none;border:1px solid var(--border-mid);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-secondary);transition:all 0.12s;flex-shrink:0;}
+.transport-btn:hover{background:var(--bg-raised);color:var(--text-primary)}
+.transport-btn i{font-size:12px}
+.tempo-area{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);flex-shrink:0}
+.tempo-area input[type=range]{width:68px;-webkit-appearance:none;height:3px;background:var(--border-mid);border-radius:2px;outline:none;cursor:pointer;}
+.tempo-area input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2);}
+.tempo-val{font-family:var(--font-mono);font-size:12px;color:var(--text-primary);min-width:26px}
+.key-sel,.meter-sel{font-size:11px;padding:3px 7px;border-radius:var(--radius-sm);border:1px solid var(--border-mid);background:var(--bg-raised);color:var(--text-primary);cursor:pointer;font-family:var(--font-sans);appearance:none;-webkit-appearance:none;padding-right:20px;}
+.status-msg{font-size:11px;color:var(--text-muted);font-family:var(--font-sans);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
+.time-disp{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);flex-shrink:0;background:var(--bg-raised);padding:2px 7px;border-radius:4px;border:1px solid var(--border-subtle);}
+.playhead-indicator{width:3px;height:22px;background:var(--accent);border-radius:2px;opacity:0;transition:opacity 0.2s;flex-shrink:0;}
+.playhead-indicator.active{opacity:1;animation:pulse 0.8s ease infinite alternate}
+@keyframes pulse{from{opacity:0.5}to{opacity:1}}
+
+/* ── Hint Bar ────────────────────────────────────────────────────────── */
+.hint-bar{background:var(--bg-raised);border-top:1px solid var(--border-subtle);padding:3px 16px;font-size:10px;color:var(--text-muted);font-family:var(--font-sans);display:flex;gap:14px;flex-shrink:0;align-items:center;height:22px;overflow:hidden;}
+.hint-bar span{white-space:nowrap;display:flex;align-items:center;gap:3px}
+.hint-bar kbd{background:var(--bg-surface);border:1px solid var(--border-mid);border-bottom-width:2px;border-radius:3px;padding:0 4px;font-size:9px;font-family:var(--font-mono);color:var(--text-secondary);}
+
+/* ── Modal / Dialog ──────────────────────────────────────────────────── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(3px);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.15s;pointer-events:none;}
+.modal-bg.show{opacity:1;pointer-events:auto}
+.modal{background:var(--bg-surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-md),0 0 0 1px var(--border-subtle);padding:24px;min-width:320px;max-width:480px;width:90%;transform:translateY(8px);transition:transform 0.15s;}
+.modal-bg.show .modal{transform:translateY(0)}
+.modal h2{font-family:var(--font-serif);font-size:18px;margin-bottom:6px;font-weight:500}
+.modal p{font-size:12px;color:var(--text-secondary);margin-bottom:16px}
+.modal input,.modal textarea{width:100%;padding:8px 12px;border:1px solid var(--border-mid);border-radius:var(--radius-sm);background:var(--bg-raised);color:var(--text-primary);font-size:13px;font-family:var(--font-sans);outline:none;transition:border-color 0.12s;margin-bottom:12px;}
+.modal input:focus,.modal textarea:focus{border-color:var(--accent)}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+.btn{padding:7px 16px;border-radius:var(--radius-sm);font-size:12px;font-family:var(--font-sans);font-weight:500;cursor:pointer;border:none;transition:all 0.12s;}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border-mid)}
+.btn-ghost:hover{background:var(--bg-raised);color:var(--text-primary)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{opacity:0.85}
+
+/* ── Properties Panel ────────────────────────────────────────────────── */
+.prop-panel{width:200px;background:var(--bg-surface);border-left:1px solid var(--border-subtle);display:flex;flex-direction:column;flex-shrink:0;font-size:12px;overflow-y:auto;}
+.prop-panel.hidden{display:none}
+.prop-section{padding:12px 14px;border-bottom:1px solid var(--border-subtle)}
+.prop-section h4{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:600;margin-bottom:10px}
+.prop-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}
+.prop-row label{color:var(--text-secondary);font-size:11px;white-space:nowrap}
+.prop-row select,.prop-row input[type=number]{padding:3px 6px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-raised);color:var(--text-primary);font-size:11px;font-family:var(--font-sans);width:90px;outline:none;}
+.prop-empty{padding:20px 14px;text-align:center;color:var(--text-muted);font-size:11px;font-style:italic}
+
+/* ── Mode Badge ──────────────────────────────────────────────────────── */
+.mode-badge{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:var(--bg-raised);color:var(--text-muted);border:1px solid var(--border-subtle);transition:all 0.15s;flex-shrink:0;}
+.mode-badge.mode-note{background:rgba(45,122,74,0.12);color:var(--green);border-color:rgba(45,122,74,0.2)}
+.mode-badge.mode-rest{background:rgba(181,52,31,0.1);color:var(--red);border-color:rgba(181,52,31,0.15)}
+.mode-badge.mode-select{background:var(--accent-light);color:var(--accent);border-color:rgba(44,95,138,0.2)}
+.mode-badge i{font-size:11px}
+
+/* ── Toast notifications ─────────────────────────────────────────────── */
+.toast-container{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:500;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{background:var(--text-primary);color:var(--bg-surface);font-size:11px;font-family:var(--font-sans);padding:7px 14px;border-radius:20px;white-space:nowrap;animation:toastIn 0.2s ease forwards, toastOut 0.3s ease 1.7s forwards;box-shadow:var(--shadow-md);font-weight:500;}
+@keyframes toastIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateY(-4px)}}
+
+/* ── Settings Modal ──────────────────────────────────────────────────── */
+.settings-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px}
+.settings-row label{font-size:12px;color:var(--text-secondary)}
+.settings-row input[type=number],.settings-row select{padding:4px 8px;border:1px solid var(--border-mid);border-radius:4px;background:var(--bg-raised);color:var(--text-primary);font-family:var(--font-sans);font-size:12px}
+.settings-row input[type=checkbox]{width:auto}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-music"></i></div>
+    score<em>craft</em>
+  </div>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" data-action="newScore"><i class="ti ti-file-plus"></i> New</button>
+  <button class="tb-btn" data-action="openSaveDialog"><i class="ti ti-device-floppy"></i> Save</button>
+  <button class="tb-btn" data-action="loadDialog"><i class="ti ti-folder-open"></i> Open</button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" data-action="exportSVG"><i class="ti ti-photo-down"></i> SVG</button>
+  <button class="tb-btn" data-action="exportMusicXML"><i class="ti ti-code-dots"></i> MusicXML</button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" data-action="undo"><i class="ti ti-arrow-back-up"></i></button>
+  <button class="tb-btn" data-action="redo"><i class="ti ti-arrow-forward-up"></i></button>
+  <div class="tb-title" id="topTitle">Untitled Score</div>
+  <div class="tb-right">
+    <span class="mode-badge mode-select" id="modeBadge"><i class="ti ti-pointer"></i> Select</span>
+    <div class="zoom-wrap">
+      <button class="tb-btn" data-action="zoomOut"><i class="ti ti-zoom-out"></i></button>
+      <span class="zoom-disp" id="zoomDisp">100%</span>
+      <button class="tb-btn" data-action="zoomIn"><i class="ti ti-zoom-in"></i></button>
+    </div>
+    <button class="tb-btn" data-action="togglePanel" title="Toggle properties panel"><i class="ti ti-layout-sidebar-right"></i></button>
+  </div>
+</div>
+
+<!-- Workspace -->
+<div class="workspace">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <button class="sb-btn active" id="sbSelect" data-mode="select">
+      <i class="ti ti-pointer"></i><span class="sb-tooltip">Select <kbd>S</kbd></span>
+    </button>
+    <button class="sb-btn" id="sbNote" data-mode="note">
+      <i class="ti ti-music"></i><span class="sb-tooltip">Note input <kbd>N</kbd></span>
+    </button>
+    <button class="sb-btn" id="sbRest" data-mode="rest">
+      <i class="ti ti-minus"></i><span class="sb-tooltip">Rest <kbd>R</kbd></span>
+    </button>
+    <div class="sb-sep"></div>
+    <button class="sb-btn" data-action="addMeasure">
+      <i class="ti ti-square-plus"></i><span class="sb-tooltip">Add measure</span>
+    </button>
+    <button class="sb-btn" data-action="deleteMeasure">
+      <i class="ti ti-square-minus"></i><span class="sb-tooltip">Remove last measure</span>
+    </button>
+    <div class="sb-sep"></div>
+    <button class="sb-btn" data-action="addRepeatBar">
+      <i class="ti ti-repeat"></i><span class="sb-tooltip">Add repeat markers</span>
+    </button>
+    <button class="sb-btn" data-action="clearMeasure">
+      <i class="ti ti-eraser"></i><span class="sb-tooltip">Clear measure</span>
+    </button>
+    <div class="sb-sep"></div>
+    <button class="sb-btn" data-action="openScoreSettings">
+      <i class="ti ti-settings"></i><span class="sb-tooltip">Score settings</span>
+    </button>
+  </div>
+
+  <!-- Main area -->
+  <div class="main">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <span class="tool-label">Duration</span>
+      <div class="tool-group" id="durationGroup">
+        <button class="tool-btn" data-dur="1"><span class="note-sym">𝅝</span><span class="tool-tt">Whole <kbd>1</kbd></span></button>
+        <button class="tool-btn" data-dur="2"><span class="note-sym">𝅗𝅥</span><span class="tool-tt">Half <kbd>2</kbd></span></button>
+        <button class="tool-btn active" data-dur="4"><span class="note-sym">♩</span><span class="tool-tt">Quarter <kbd>4</kbd></span></button>
+        <button class="tool-btn" data-dur="8"><span class="note-sym">♪</span><span class="tool-tt">8th <kbd>6</kbd></span></button>
+        <button class="tool-btn" data-dur="16"><span class="note-sym">𝅘𝅥𝅯</span><span class="tool-tt">16th <kbd>3</kbd></span></button>
+      </div>
+      <div class="tool-sep"></div>
+      <span class="tool-label">Acc.</span>
+      <div class="tool-group">
+        <button class="tool-btn" id="accFlat" data-acc="b">♭<span class="tool-tt">Flat</span></button>
+        <button class="tool-btn" id="accNat" data-acc="n">♮<span class="tool-tt">Natural</span></button>
+        <button class="tool-btn" id="accSharp" data-acc="#">♯<span class="tool-tt">Sharp</span></button>
+      </div>
+      <div class="tool-sep"></div>
+      <div class="tool-group">
+        <button class="tool-btn" id="dotBtn" data-action="toggleDot"><span style="font-size:16px;line-height:1">·</span><span class="tool-tt">Dotted</span></button>
+        <button class="tool-btn" id="tieBtn" data-action="toggleTie"><i class="ti ti-wave-sine"></i><span class="tool-tt">Tie</span></button>
+      </div>
+      <div class="tool-sep"></div>
+      <span class="tool-label">Artic.</span>
+      <div class="tool-group">
+        <button class="tool-btn" id="artStacc" data-artic="staccato">•<span class="tool-tt">Staccato</span></button>
+        <button class="tool-btn" id="artAccent" data-artic="accent">&#x25b8;<span class="tool-tt">Accent</span></button>
+        <button class="tool-btn" id="artTenuto" data-artic="tenuto" style="font-size:10px">—<span class="tool-tt">Tenuto</span></button>
+        <button class="tool-btn" id="artFermata" data-artic="fermata">𝄐<span class="tool-tt">Fermata</span></button>
+      </div>
+      <div class="tool-sep"></div>
+      <span class="tool-label">Dyn.</span>
+      <div class="tool-group">
+        <button class="tool-btn" id="dynPP" data-dyn="pp"><i style="font-style:italic;font-size:10px;font-family:Georgia,serif">pp</i><span class="tool-tt">Pianissimo</span></button>
+        <button class="tool-btn" id="dynP" data-dyn="p"><i style="font-style:italic;font-size:11px;font-family:Georgia,serif">p</i><span class="tool-tt">Piano</span></button>
+        <button class="tool-btn" id="dynMF" data-dyn="mf"><i style="font-style:italic;font-size:9px;font-family:Georgia,serif">mf</i><span class="tool-tt">Mezzo-forte</span></button>
+        <button class="tool-btn" id="dynF" data-dyn="f"><i style="font-style:italic;font-size:11px;font-family:Georgia,serif">f</i><span class="tool-tt">Forte</span></button>
+        <button class="tool-btn" id="dynFF" data-dyn="ff"><i style="font-style:italic;font-size:10px;font-family:Georgia,serif">ff</i><span class="tool-tt">Fortissimo</span></button>
+      </div>
+      <div class="tool-sep"></div>
+      <span class="tool-label">Octave</span>
+      <div class="tool-group">
+        <button class="tool-btn" data-action="octaveDown"><i class="ti ti-arrow-bar-down"></i><span class="tool-tt">Octave down <kbd>Ctrl+↓</kbd></span></button>
+        <span class="tool-btn" id="octaveDisp" style="cursor:default;font-family:var(--font-mono);font-size:11px;color:var(--text-primary);pointer-events:none">4</span>
+        <button class="tool-btn" data-action="octaveUp"><i class="ti ti-arrow-bar-up"></i><span class="tool-tt">Octave up <kbd>Ctrl+↑</kbd></span></button>
+      </div>
+    </div>
+
+    <!-- Score area -->
+    <div class="score-area" id="scoreArea">
+      <div class="score-page" id="scorePage">
+        <div class="score-header">
+          <div class="score-title" id="pageTitleEl">Untitled Score</div>
+          <div class="score-subtitle" id="pageSubEl">for Piano — click to edit</div>
+        </div>
+        <div class="score-meta">
+          <span id="composerMeta"></span>
+          <span id="dateMeta"></span>
+        </div>
+        <div id="systemsContainer"></div>
+      </div>
+    </div>
+
+    <!-- Playbar -->
+    <div class="playbar">
+      <button class="transport-btn" data-action="rewind" title="Rewind"><i class="ti ti-player-skip-back"></i></button>
+      <button class="play-btn" id="playBtn" data-action="togglePlay"><i class="ti ti-player-play" id="playIcon"></i></button>
+      <button class="transport-btn" data-action="stop" title="Stop"><i class="ti ti-player-stop"></i></button>
+      <div class="tool-sep"></div>
+      <div class="tempo-area">
+        <i class="ti ti-metronome" style="font-size:13px"></i>
+        <input type="range" min="40" max="240" value="120" id="tempoSlider">
+        <span class="tempo-val" id="tempoDisp">120</span>
+        <span style="color:var(--text-muted);font-size:11px">bpm</span>
+      </div>
+      <div class="tool-sep"></div>
+      <select class="key-sel" id="keySel">
+        <optgroup label="Major">
+          <option value="C">C major</option>
+          <option value="G">G major</option>
+          <option value="D">D major</option>
+          <option value="A">A major</option>
+          <option value="E">E major</option>
+          <option value="B">B major</option>
+          <option value="F">F major</option>
+          <option value="Bb">B♭ major</option>
+          <option value="Eb">E♭ major</option>
+          <option value="Ab">A♭ major</option>
+        </optgroup>
+        <optgroup label="Minor">
+          <option value="Am">A minor</option>
+          <option value="Em">E minor</option>
+          <option value="Bm">B minor</option>
+          <option value="Dm">D minor</option>
+          <option value="Gm">G minor</option>
+          <option value="Cm">C minor</option>
+        </optgroup>
+      </select>
+      <select class="meter-sel" id="meterSel">
+        <option value="4/4">4/4</option>
+        <option value="3/4">3/4</option>
+        <option value="6/8">6/8</option>
+        <option value="2/4">2/4</option>
+        <option value="2/2">2/2</option>
+        <option value="5/4">5/4</option>
+        <option value="7/8">7/8</option>
+        <option value="12/8">12/8</option>
+      </select>
+      <div class="playhead-indicator" id="playheadIndicator"></div>
+      <span class="status-msg" id="statusMsg">Select note input mode (N) and click the staff to place notes</span>
+      <span class="time-disp" id="timeDisp">0:00</span>
+    </div>
+  </div>
+
+  <!-- Properties Panel -->
+  <div class="prop-panel hidden" id="propPanel">
+    <div class="prop-section">
+      <h4>Selected Note</h4>
+      <div id="propNoteInfo"><div class="prop-empty">No note selected</div></div>
+    </div>
+    <div class="prop-section">
+      <h4>Edit Note</h4>
+      <div class="prop-row">
+        <label>Pitch</label>
+        <select id="propPitch">
+          <option>C</option><option>D</option><option>E</option>
+          <option>F</option><option>G</option><option>A</option><option>B</option>
+        </select>
+      </div>
+      <div class="prop-row">
+        <label>Octave</label>
+        <input type="number" id="propOctave" min="2" max="7" value="4">
+      </div>
+      <div class="prop-row">
+        <label>Duration</label>
+        <select id="propDur">
+          <option value="1">Whole</option><option value="2">Half</option>
+          <option value="4" selected>Quarter</option><option value="8">8th</option><option value="16">16th</option>
+        </select>
+      </div>
+      <div class="prop-row">
+        <label>Accidental</label>
+        <select id="propAcc">
+          <option value="none">None</option><option value="#">♯ Sharp</option>
+          <option value="b">♭ Flat</option><option value="n">♮ Natural</option>
+        </select>
+      </div>
+    </div>
+    <div class="prop-section">
+      <h4>Measure</h4>
+      <div id="propMeasureInfo" style="font-size:11px;color:var(--text-secondary)">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- Hint bar -->
+<div class="hint-bar">
+  <span><kbd>N</kbd> Note</span>
+  <span><kbd>R</kbd> Rest</span>
+  <span><kbd>S</kbd> Select</span>
+  <span><kbd>Space</kbd> Play</span>
+  <span><kbd>A–G</kbd> Enter note</span>
+  <span><kbd>Del</kbd> Delete</span>
+  <span><kbd>1 2 4 6 3</kbd> Duration</span>
+  <span><kbd>↑↓</kbd> Transpose</span>
+  <span><kbd>←→</kbd> Navigate</span>
+  <span><kbd>Ctrl+Z</kbd> Undo</span>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Edit Title Modal -->
+<div class="modal-bg" id="titleModal">
+  <div class="modal">
+    <h2>Score Title</h2>
+    <p>Name your composition</p>
+    <input type="text" id="titleInput" placeholder="Untitled Score">
+    <input type="text" id="subtitleInput" placeholder="Subtitle or instrumentation">
+    <input type="text" id="composerInput" placeholder="Composer name (optional)">
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-action="closeModal" data-modal="titleModal">Cancel</button>
+      <button class="btn btn-primary" data-action="applyTitle">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- Score Settings Modal -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal">
+    <h2>Score Settings</h2>
+    <p>Configure notation options</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      <div class="settings-row">
+        <label>Measures per row</label>
+        <input type="number" id="measPerRow" value="4" min="1" max="8">
+      </div>
+      <div class="settings-row">
+        <label>Sound</label>
+        <select id="soundType">
+          <option value="triangle">Soft (Triangle)</option>
+          <option value="sine">Pure (Sine)</option>
+          <option value="square">Organ (Square)</option>
+          <option value="sawtooth">Bright (Sawtooth)</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label>Show measure numbers</label>
+        <input type="checkbox" id="showMeasNums" checked>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-action="closeModal" data-modal="settingsModal">Cancel</button>
+      <button class="btn btn-primary" data-action="applySettings">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Score Modal -->
+<div class="modal-bg" id="newModal">
+  <div class="modal">
+    <h2>New Score</h2>
+    <p>This will clear the current score. Any unsaved changes will be lost.</p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-action="closeModal" data-modal="newModal">Cancel</button>
+      <button class="btn btn-danger" data-action="confirmNewScore">New Score</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save Modal -->
+<div class="modal-bg" id="saveModal">
+  <div class="modal">
+    <h2>Save Score</h2>
+    <p>Your score is saved to this browser. Use Export SVG or MusicXML to save a file.</p>
+    <input type="text" id="saveNameInput" placeholder="Score name">
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-action="closeModal" data-modal="saveModal">Cancel</button>
+      <button class="btn btn-primary" data-action="handleSaveModal">Save</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
